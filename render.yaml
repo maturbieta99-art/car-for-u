@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: car-for-u
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: AUTODEV_API_KEY
+        sync: false

@@ -1,0 +1,16 @@
+{
+  "name": "car-for-u",
+  "version": "1.0.0",
+  "description": "Search used car listings by make, model, mileage, and location, with simple value-based recommendations",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}

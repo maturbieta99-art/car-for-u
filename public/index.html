@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Car for U</title>
+<link rel="manifest" href="/manifest.json" />
+<link rel="apple-touch-icon" href="/icons/icon-180.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Car for U" />
+<meta name="theme-color" content="#0c0d10" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0c0d10;
+    --surface: #15171b;
+    --surface-2: #1c1f25;
+    --border: #24262c;
+    --text: #f2f3f5;
+    --muted: #8a8f99;
+    --accent: #6366f1;
+    --accent-hover: #7577f3;
+    --good: #34d399;
+    --bad: #f87171;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { background: var(--bg); }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    margin: 0;
+    min-height: 100vh;
+    padding: 64px 24px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Just a faint glow, no grid — kept quiet so it doesn't compete with content. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(ellipse 50% 32% at 50% -5%, #6366f11c 0%, transparent 65%);
+  }
+
+  .container { max-width: 720px; margin: 0 auto; position: relative; }
+
+  header { text-align: center; margin-bottom: 32px; }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, #ffffff 0%, #c7c9d1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .subtitle { color: var(--muted); font-size: 14px; }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 6px 6px 6px 18px;
+    gap: 8px;
+    transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .search-bar:has(input:focus) { border-color: var(--accent); box-shadow: 0 0 0 3px #6366f11c; }
+
+  .search-bar input {
+    flex: 1;
+    padding: 12px 0;
+    font-size: 15px;
+    background: transparent;
+    color: var(--text);
+    border: none;
+    outline: none;
+  }
+
+  .search-bar input::placeholder { color: var(--muted); }
+
+  .search-bar button {
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transform: scale(1);
+    transition: background 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .search-bar button:hover { background: var(--accent-hover); transform: scale(1.03); }
+  .search-bar button:active { transform: scale(0.96); transition-duration: 0.1s; }
+  .search-bar button:disabled { background: #3a3d6b; cursor: not-allowed; transform: scale(1); }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    min-height: 22px;
+  }
+
+  .location-note {
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+
+  .filters-toggle {
+    color: var(--muted);
+    font-size: 12.5px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1), text-decoration-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .filters-toggle:hover { color: var(--text); text-decoration-color: var(--muted); }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, margin-top 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .filters.open {
+    max-height: 80px;
+    opacity: 1;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 600px) {
+    .filters { grid-template-columns: 1fr; }
+    .filters.open { max-height: 220px; }
+  }
+
+  .filters input {
+    padding: 10px 12px;
+    font-size: 13px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    outline: none;
+    width: 100%;
+  }
+
+  .filters input:focus { border-color: var(--accent); }
+  .filters input::placeholder { color: var(--muted); }
+
+  #status {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 22px 0 12px;
+    min-height: 18px;
+  }
+
+  .cards { display: flex; flex-direction: column; gap: 8px; }
+
+  .card {
+    display: grid;
+    grid-template-columns: 84px 1fr auto auto auto auto;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0;
+    transform: translateY(6px);
+    animation: card-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .card:hover { border-color: #3a3d4699; transform: translateY(-2px); }
+
+  @keyframes card-in {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 640px) {
+    .card { grid-template-columns: 64px 1fr; gap: 10px; }
+    .card .stat:nth-of-type(2) { display: none; }
+  }
+
+  .car-photo {
+    width: 84px;
+    height: 64px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--surface-2);
+  }
+
+  @media (max-width: 640px) {
+    .car-photo { width: 64px; height: 48px; }
+  }
+
+  .car-name { font-size: 14.5px; font-weight: 600; }
+  .car-location { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .car-dealer { color: var(--muted); font-size: 11.5px; margin-top: 3px; }
+
+  .stat { text-align: right; }
+  .stat-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-value { font-size: 13.5px; font-weight: 600; margin-top: 2px; }
+
+  .badge {
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 999px;
+    text-align: center;
+    min-width: 50px;
+  }
+
+  .badge.good { color: var(--good); background: #34d39920; }
+  .badge.bad { color: var(--bad); background: #f8717120; }
+  .badge.neutral { color: var(--muted); background: #8a8f9918; }
+
+  .view-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .view-link:hover { color: var(--accent-hover); }
+
+  .empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 50px 0;
+    font-size: 13.5px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #ffffff55;
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .skeleton {
+    height: 76px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .error-banner {
+    color: var(--bad);
+    background: #f8717112;
+    border: 1px solid #f8717135;
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Car for U</h1>
+      <div class="subtitle">Find good-value cars near you in one search</div>
+    </header>
+
+    <form id="searchForm">
+      <div class="search-bar">
+        <input id="query" placeholder="Try “Honda Civic” or “Tesla Model 3”" autofocus required />
+        <button type="submit" id="searchBtn">Search</button>
+      </div>
+
+      <div class="meta-row">
+        <span class="location-note" id="locationStatus"></span>
+        <button type="button" class="filters-toggle" id="filtersToggle">More filters</button>
+      </div>
+
+      <div class="filters" id="filters">
+        <input id="maxMileage" placeholder="Max mileage" type="number" min="0" />
+        <input id="zip" placeholder="ZIP code" />
+        <input id="radius" placeholder="Radius (mi)" type="number" min="0" />
+      </div>
+    </form>
+
+    <div id="status"></div>
+    <div class="cards" id="results"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('searchForm');
+    const queryInput = document.getElementById('query');
+    const statusEl = document.getElementById('status');
+    const resultsEl = document.getElementById('results');
+    const searchBtn = document.getElementById('searchBtn');
+    const zipInput = document.getElementById('zip');
+    const locationStatusEl = document.getElementById('locationStatus');
+    const filtersToggle = document.getElementById('filtersToggle');
+    const filtersEl = document.getElementById('filters');
+
+    filtersToggle.addEventListener('click', () => {
+      const open = filtersEl.classList.toggle('open');
+      filtersToggle.textContent = open ? 'Hide filters' : 'More filters';
+    });
+
+    function detectLocation() {
+      if (!navigator.geolocation) return;
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const res = await fetch(`/api/reverse-geocode?lat=${latitude}&lon=${longitude}`);
+            const data = await res.json();
+            if (data.zip) {
+              zipInput.value = data.zip;
+              locationStatusEl.textContent = '📍 Searching near ZIP ' + data.zip;
+            }
+          } catch {
+            /* silently fall back to no location */
+          }
+        },
+        () => {
+          locationStatusEl.textContent = '';
+        }
+      );
+    }
+
+    detectLocation();
+
+    // Splits "Honda Civic" into make="Honda", model="Civic". A single word
+    // is treated as the make only, so the field doubles as a simple search box.
+    function parseQuery(value) {
+      const words = value.trim().split(/\s+/).filter(Boolean);
+      return { make: words[0] || '', model: words.slice(1).join(' ') };
+    }
+
+    function badgeClass(score) {
+      if (score == null) return 'neutral';
+      if (score > 10) return 'good';
+      if (score < -10) return 'bad';
+      return 'neutral';
+    }
+
+    function setLoading(isLoading) {
+      searchBtn.disabled = isLoading;
+      searchBtn.innerHTML = isLoading ? '<span class="spinner"></span>Searching' : 'Search';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const { make, model } = parseQuery(queryInput.value);
+      if (!make) {
+        statusEl.innerHTML = '<div class="error-banner">Type a car make to search, e.g. "Honda".</div>';
+        queryInput.focus();
+        return;
+      }
+
+      const params = new URLSearchParams({
+        make,
+        model,
+        maxMileage: document.getElementById('maxMileage').value,
+        zip: zipInput.value,
+        radius: document.getElementById('radius').value,
+      });
+
+      setLoading(true);
+      statusEl.textContent = '';
+      resultsEl.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+
+      let data;
+      try {
+        const res = await fetch('/api/search?' + params.toString());
+        data = await res.json();
+      } catch {
+        setLoading(false);
+        resultsEl.innerHTML = '';
+        statusEl.innerHTML = '<div class="error-banner">Couldn\'t reach the server. Check your connection and try again.</div>';
+        return;
+      }
+
+      setLoading(false);
+
+      if (data.error) {
+        resultsEl.innerHTML = '';
+        statusEl.innerHTML = '<div class="error-banner">' + data.error + '</div>';
+        return;
+      }
+
+      if (!data.listings.length) {
+        statusEl.textContent = 'No results';
+        resultsEl.innerHTML = '<div class="empty">Nothing matched that search. Try a different model or widen the filters.</div>';
+        return;
+      }
+
+      statusEl.textContent = data.listings.length + ' results, sorted by best value';
+      resultsEl.innerHTML = data.listings
+        .sort((a, b) => (b.valueScore || 0) - (a.valueScore || 0))
+        .map((c, i) => {
+          const cls = badgeClass(c.valueScore);
+          const badgeText = c.valueScore != null ? (c.valueScore > 0 ? '+' : '') + c.valueScore + '%' : '—';
+          const delay = Math.min(i, 12) * 35;
+          return `<div class="card" style="animation-delay: ${delay}ms">
+            <img class="car-photo" src="${c.photoUrl || ''}" loading="lazy" onerror="this.style.visibility='hidden'" />
+            <div>
+              <div class="car-name">${c.year || ''} ${c.make || ''} ${c.model || ''} ${c.trim || ''}</div>
+              <div class="car-location">${c.location || ''}</div>
+              ${c.dealerName ? `<div class="car-dealer">${c.dealerName}</div>` : ''}
+            </div>
+            <div class="stat">
+              <div class="stat-label">Price</div>
+              <div class="stat-value">${c.price != null ? '$' + c.price.toLocaleString() : '—'}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Mileage</div>
+              <div class="stat-value">${c.mileage != null ? c.mileage.toLocaleString() + ' mi' : '—'}</div>
+            </div>
+            <span class="badge ${cls}">${badgeText}</span>
+            ${c.url ? `<a class="view-link" href="${c.url}" target="_blank" rel="noopener">${c.isDirectDealerLink ? 'View at dealer →' : 'Search →'}</a>` : '<span></span>'}
+          </div>`;
+        })
+        .join('');
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+    }
+  </script>
+</body>
+</html>
