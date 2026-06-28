@@ -10,16 +10,6 @@ const AUTODEV_LISTINGS_URL = 'https://auto.dev/api/listings';
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Temporary: confirms whether the env var reached the server, without
-// exposing the actual key. Remove once the deploy is confirmed working.
-app.get('/api/debug-env', (req, res) => {
-  res.json({
-    present: Boolean(AUTODEV_API_KEY),
-    length: AUTODEV_API_KEY ? AUTODEV_API_KEY.length : 0,
-    startsWith: AUTODEV_API_KEY ? AUTODEV_API_KEY.slice(0, 6) : null,
-  });
-});
-
 app.get('/api/reverse-geocode', async (req, res) => {
   const { lat, lon } = req.query;
   if (!lat || !lon) {
