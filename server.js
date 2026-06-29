@@ -1,11 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const AUTODEV_API_KEY = process.env.AUTODEV_API_KEY;
 const AUTODEV_LISTINGS_URL = 'https://auto.dev/api/listings';
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
@@ -184,6 +186,86 @@ app.get('/api/search', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
+app.post('/api/generate-plan', async (req, res) => {
+  const { school, major, currentYear, minor, apCredits, courseLoad, careerGoals } = req.body;
+
+  if (!school || !major) {
+    return res.status(400).json({ error: 'school and major are required' });
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY configuration' });
+  }
+
+  const loadDesc = { light: '3-4 courses (12-13 credits)', normal: '4-5 courses (15-16 credits)', heavy: '5-6 courses (17-18 credits)' };
+  const yearLabel = { freshman: 'Year 1 (Freshman)', sophomore: 'Year 2 (Sophomore)', junior: 'Year 3 (Junior)', senior: 'Year 4 (Senior)' };
+
+  const prompt = `You are an academic advisor creating a detailed 4-year course plan for a college student.
+
+Student Information:
+- School: ${school}
+- Major: ${major}
+- Current Status: ${yearLabel[currentYear] || 'Incoming Freshman'}
+${minor ? `- Minor: ${minor}` : ''}
+${apCredits ? `- AP/Transfer Credits: ${apCredits}` : ''}
+- Preferred Course Load: ${loadDesc[courseLoad] || loadDesc.normal}
+${careerGoals ? `- Career Goals: ${careerGoals}` : ''}
+
+Generate a complete 4-year academic plan. For each semester, list the specific courses a student at ${school} studying ${major} would typically take. Include course codes where standard/typical (e.g., MATH 101), course names, and credit hours.
+
+Respond with a JSON object in exactly this format:
+{
+  "summary": "Brief overview of this academic plan (2-3 sentences)",
+  "totalCredits": 120,
+  "years": [
+    {
+      "year": 1,
+      "label": "Freshman Year",
+      "semesters": [
+        {
+          "name": "Fall Semester",
+          "courses": [
+            { "code": "ENGL 101", "name": "English Composition", "credits": 3, "type": "General Education" },
+            { "code": "MATH 151", "name": "Calculus I", "credits": 4, "type": "Core Requirement" }
+          ],
+          "totalCredits": 16
+        },
+        {
+          "name": "Spring Semester",
+          "courses": [...],
+          "totalCredits": 15
+        }
+      ]
+    }
+  ],
+  "tips": ["Academic tip 1", "Academic tip 2", "Academic tip 3"]
+}
+
+Course types should be one of: "General Education", "Core Requirement", "Major Requirement", "Major Elective", "Minor", "Free Elective".
+
+Make the plan realistic and specific to ${major} at ${school}. Include general education requirements, major core courses, upper-division electives, and capstone/senior experience courses where applicable. Adjust the plan if the student has AP/transfer credits to show them starting from their current year.`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const content = message.content[0].text;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return res.status(500).json({ error: 'Failed to parse plan from AI response' });
+    }
+
+    const plan = JSON.parse(jsonMatch[0]);
+    res.json(plan);
+  } catch (err) {
+    console.error('Plan generation error:', err);
+    res.status(500).json({ error: err.message || 'Failed to generate plan' });
   }
 });
 
