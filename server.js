@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const AUTODEV_API_KEY = process.env.AUTODEV_API_KEY;
 const AUTODEV_LISTINGS_URL = 'https://auto.dev/api/listings';
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.PLANNER_API_KEY });
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
@@ -196,8 +196,8 @@ app.post('/api/generate-plan', async (req, res) => {
     return res.status(400).json({ error: 'school and major are required' });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY configuration' });
+  if (!process.env.PLANNER_API_KEY) {
+    return res.status(500).json({ error: 'Missing PLANNER_API_KEY configuration' });
   }
 
   const loadDesc = { light: '3-4 courses (12-13 credits)', normal: '4-5 courses (15-16 credits)', heavy: '5-6 courses (17-18 credits)' };
