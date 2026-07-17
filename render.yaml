@@ -8,5 +8,5 @@ services:
     envVars:
       - key: AUTODEV_API_KEY
         sync: false
-      - key: ANTHROPIC_API_KEY
+      - key: PLANNER_API_KEY
         sync: false
